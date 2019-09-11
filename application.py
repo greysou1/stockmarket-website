@@ -1,4 +1,4 @@
-from cs50 import SQL
+#from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
@@ -6,6 +6,7 @@ from werkzeug.exceptions import default_exceptions
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 import string
+import sqlite3 as SQL
 
 from helpers import apology, login_required, lookup, usd
 
@@ -33,8 +34,9 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///finance.db")
+connection = SQL.connect("finance.db", check_same_thread=False)
 
+db = connection.cursor()
 
 @app.route("/")
 @login_required
@@ -200,15 +202,16 @@ def register():
             special = set(string.punctuation.replace("_", ""))
             if any(char in special for char in password):
                 passhash = generate_password_hash(request.form.get("password"))
-                result = db.execute("INSERT INTO users (username,hash) VALUES (:username,:passhash)",
-                                    username=request.form.get("username"), passhash=passhash)
-
+                username = request.form.get("username")
+                result = db.execute("INSERT INTO users (username,hash) VALUES(?, ?)",(username, passhash))
+                
                 if not result:
                     return apology("Username already exists", 400)
                 else:
+                    username=request.form.get("username")
+                    print(username)
                     # Query database for username
-                    rows = db.execute("SELECT * FROM users WHERE username = :username",
-                                      username=request.form.get("username"))
+                    rows = db.execute("SELECT * FROM users WHERE username = (?)", (username, ))
                     session["user_id"] = rows[0]["id"]
                     return redirect("/login")
             else:
