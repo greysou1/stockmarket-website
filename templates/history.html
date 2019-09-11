@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Portfolio
+{% endblock %}
+
+{% block main %}
+
+    <main class="container p-5">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>Share</th>
+                <th>Price</th>
+                <th>TOTAL</th>
+            </tr>
+        </thead>
+        <tbody>
+            {%for stock in history%}
+                <tr>
+                    <td>
+                        {{stock.symbol}}
+                    </td>
+                    <td>
+                        {{stock.shares}}
+                    </td>
+                    <td>
+                        {{stock.price}}
+                    </td>
+                    <td>
+                        {{stock.transactions}}
+                    </td>
+                </tr>
+            {% endfor %}
+    </table>
+    </main>
+{% endblock %}

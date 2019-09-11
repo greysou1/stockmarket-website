@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+    <form class-"container center_div" action="/register" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" name="password" placeholder="Enter Password" type="password"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" name="confirmation" placeholder="Enter password again" type="password"/>
+        </div>
+        <div class="form-group">
+            <p class="text-muted">(password must contain atleast 1 special character and length must be 6 characters or more)</p> </p>
+        </div>
+        <button class="btn btn-primary" type="submit">Register</button>
+    </form>
+{% endblock %}
