@@ -19,6 +19,10 @@ A web app via which you can manage portfolios of stocks. Not only will this tool
 4. Enter the address in browser
 
 
+
+**Note**: If you're running into an error that says "You did not provide the "FLASK_APP" environment variable" run the following command before running step 3
+`export FLASK_APP=application.py`
+
 ### Credits
 [CS50X course by Harvard](https://www.edx.org/course/cs50s-introduction-computer-science-harvardx-cs50x) on EdX
 This version of the repository is almost similar (borrowed code) to pset7 Finance in the course. 
