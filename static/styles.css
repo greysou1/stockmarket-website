@@ -49,3 +49,9 @@ main img
     /* constrain images on small screens */
     max-width: 100%;
 }
+body {
+    background-color: black;
+}
+th, td{
+    color: red;
+}

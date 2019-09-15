@@ -116,7 +116,7 @@ def history():
     for i, row in enumerate(rows):
         quote = lookup(rows[i]["symbol"])
         history_dict = {"symbol": quote["symbol"], "shares": rows[i]["shares"],
-                        "price": usd(rows[i]["price"]), "transactions": rows[i]["transactions"], "total": usd(rows[i]["price"] * rows[i]["number"])}
+                        "price": usd(rows[i]["price"]), "transactions": rows[i]["transactions"]}
         history.append(history_dict)
 
     return render_template("history.html", history=history)
