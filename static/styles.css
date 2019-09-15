@@ -52,6 +52,6 @@ main img
 body {
     background-color: black;
 }
-th, td{
+th, td, p{
     color: red;
 }

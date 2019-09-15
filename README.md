@@ -8,15 +8,23 @@ A web app via which you can manage portfolios of stocks. Not only will this tool
 
 `pip install -r requirements.txt`
 
-2. Run the program 
+2. This project does an API call to [AlphaAdvantage](https://www.alphavantage.co/documentation/)
+   You need to get your own API key, simply head on to their website and [claim your free api key](https://www.alphavantage.co/support/#api-key)
+
+3. Now open the "helpers.py" file and head on to line number 53.
+   > url = f"https://www.alphavantage.co/query?apikey=yourapikey&datatype=csv&function=TIME_SERIES_INTRADAY&interval=1min&symbol={symbol}"
+
+4. Now replace "yourapikey" with your API key.
+
+5. Run the program 
 
 `python3 application.py`
 
-3. Run the server
+6. Run the server
 
 `flask run`
 
-4. Enter the address in browser
+7. Enter the address in browser
 
 
 
