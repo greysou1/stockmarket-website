@@ -34,17 +34,22 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-connection = SQL.connect("finance.db", check_same_thread=False)
+conn = SQL.connect("finance.db", check_same_thread=False)
+conn.row_factory = SQL.Row
 
-db = connection.cursor()
+db = conn.cursor()
 
 @app.route("/")
 @login_required
 def index():
     """Show portfolio of stocks"""
-    rows = db.execute('SELECT * FROM transactions WHERE id=:id', id=session["user_id"])
+    id=session["user_id"]
+    db.execute("SELECT * FROM transactions WHERE id=(?)", (id, ))
+    rows = db.fetchall()
     stocks = []
-    cash = db.execute("SELECT cash FROM users WHERE id=:id", id=session["user_id"])
+    id=session["user_id"]
+    db.execute("SELECT cash FROM users WHERE id=(?)", (id, ))
+    cash = db.fetchall()
 
     for i, row in enumerate(rows):
         quote = lookup(rows[i]["symbol"])
@@ -75,16 +80,23 @@ def buy():
                 return apology("Invalid number", 400)
 
             shares = request.form.get("shares")
-            cash = db.execute("SELECT cash FROM users WHERE id = :id", id=session["user_id"])
+            id=session["user_id"]
+            db.execute("SELECT cash FROM users WHERE id = (?)", (id, ))
+            cash = db.fetchall()
+            
+            id = session["user_id"]
+            stocks = quote["name"]
+            symbol = quote["symbol"]
+            price = quote["price"]
             worth = float(quote["price"]) * float(shares)
             money_left = float(cash[0]["cash"]) - worth
             dtime = datetime.now()
+            
             if float(cash[0]["cash"]) >= worth:
-                db.execute("INSERT INTO transactions (id, stocks, symbol, number, price) values(:id, :stocks, :symbol, :number, :price)",
-                           id=session["user_id"], stocks=quote["name"], symbol=quote["symbol"], number=shares, price=quote["price"])
-                db.execute("UPDATE users SET cash=:left WHERE id=:id", left=money_left, id=session["user_id"])
-                db.execute("INSERT INTO history (symbol, shares, price, transactions) values(:symbol, :shares, :price, :transactions)",
-                           symbol=quote["symbol"], shares=shares, price=quote["price"], transactions=dtime)
+                db.execute("INSERT INTO transactions (id, stocks, symbol, number, price) values(?, ?, ?, ?, ?)", (id, stocks, symbol, shares, price))
+                db.execute("UPDATE users SET cash=(?) WHERE id=(?)", (money_left, id))
+                db.execute("INSERT INTO history (symbol, shares, price, transactions) values(?,?,?,?)",
+                           (symbol, shares, price, dtime))
                 return redirect("/")
 
     else:
@@ -95,7 +107,9 @@ def buy():
 @login_required
 def history():
     """Show history of transactions"""
-    rows = db.execute("SELECT * FROM history WHERE id=:id", id=session["user_id"])
+    id=session["user_id"]
+    db.execute("SELECT * FROM history WHERE id=(?)", (id, ))
+    rows = db.fetchall()
     history = []
 
     for i, row in enumerate(rows):
@@ -124,11 +138,12 @@ def login():
         # Ensure password was submitted
         elif not request.form.get("password"):
             return apology("must provide password", 403)
-
+    
+        username=request.form.get("username")
         # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = :username",
-                          username=request.form.get("username"))
-
+        db.execute("SELECT * FROM users WHERE username = ?", (username, ))
+        rows = db.fetchall()
+        print(rows)
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
             return apology("invalid username and/or password", 403)
@@ -203,16 +218,21 @@ def register():
             if any(char in special for char in password):
                 passhash = generate_password_hash(request.form.get("password"))
                 username = request.form.get("username")
-                result = db.execute("INSERT INTO users (username,hash) VALUES(?, ?)",(username, passhash))
-                
+                db.execute("INSERT INTO users (username,hash) VALUES(?, ?)",(username, passhash))
+                db.execute("SELECT * FROM users WHERE username = (?)", (username, ))
+                result = db.fetchall()
+                print(result)
                 if not result:
                     return apology("Username already exists", 400)
                 else:
                     username=request.form.get("username")
                     print(username)
                     # Query database for username
-                    rows = db.execute("SELECT * FROM users WHERE username = (?)", (username, ))
-                    session["user_id"] = rows[0]["id"]
+                    db.execute("SELECT * FROM users WHERE username = (?)", (username, ))
+                    rows = db.fetchall()
+                    # rows = dict(rows)
+                    print(rows)
+                    session["user_id"] = rows[0][0]
                     return redirect("/login")
             else:
                 return apology("Must contain special characters", 400)
@@ -236,9 +256,13 @@ def sell():
 
         elif not request.form.get("shares").isdigit():
             return apology("Invalid number", 400)
-
-        number = db.execute("SELECT number FROM transactions WHERE id = :id AND symbol=:symbol",
-                            id=session["user_id"], symbol=request.form.get("symbol"))
+    
+        id=session["user_id"]
+        symbol=request.form.get("symbol")
+        
+        db.execute("SELECT number FROM transactions WHERE id = (?) AND symbol=(?)",
+                   (id, symbol))
+        number = db.fetchall()
 
         for it, items in enumerate(number):
             if int(request.form.get("shares")) > int(number[it]["number"]):
@@ -248,20 +272,24 @@ def sell():
         dtime = datetime.now()
         quote = lookup(request.form.get("symbol"))
         symbol = quote["symbol"]
-        shares = db.execute("SELECT number FROM transactions where id=:id AND symbol=:symbol",
-                            id=session["user_id"], symbol=quote["symbol"])
+        db.execute("SELECT number FROM transactions where id=(?) AND symbol=?",
+                   (id, symbol))
+        shares = db.fetchall()
         shares_left = int(shares[0]["number"]) - int(num)
+        price=quote["price"]
 
-        db.execute("UPDATE transactions SET number=:shares_left where id=:id AND symbol=:symbol",
-                   shares_left=shares_left, id=session["user_id"], symbol=quote["symbol"])
+        db.execute("UPDATE transactions SET number=? where id=? AND symbol=?",
+                   (shares_left, id, symbol))
         cash_left = shares_left * quote["price"]
-        db.execute("UPDATE users SET cash=:cash_left where id=:id", cash_left=cash_left, id=session["user_id"])
-        db.execute("INSERT INTO history (symbol, shares, price, transactions) values(:symbol, :shares, :price, :transactions)",
-                   symbol=quote["symbol"], shares=num, price=quote["price"], transactions=dtime)
+        db.execute("UPDATE users SET cash=? where id=?", (cash_left, id))
+        db.execute("INSERT INTO history (symbol, shares, price, transactions) values(?, ?, ?, ?)",
+                   (symbol, num, price, dtime))
         return redirect("/")
 
     else:
-        symbols = db.execute("SELECT symbol FROM transactions WHERE id = :id", id=session["user_id"])
+        id=session["user_id"]
+        db.execute("SELECT symbol FROM transactions WHERE id = ?", (id, ))
+        symbols = db.fetchall()
         return render_template("sell.html", symbols=symbols)
 
 
