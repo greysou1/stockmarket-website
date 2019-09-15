@@ -33,10 +33,10 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# Configure CS50 Library to use SQLite database
+
+# Configure connection to use SQLite database
 conn = SQL.connect("finance.db", check_same_thread=False)
 conn.row_factory = SQL.Row
-
 db = conn.cursor()
 
 @app.route("/")
@@ -97,6 +97,7 @@ def buy():
                 db.execute("UPDATE users SET cash=(?) WHERE id=(?)", (money_left, id))
                 db.execute("INSERT INTO history (symbol, shares, price, transactions) values(?,?,?,?)",
                            (symbol, shares, price, dtime))
+                conn.commit()
                 return redirect("/")
 
     else:
@@ -115,7 +116,7 @@ def history():
     for i, row in enumerate(rows):
         quote = lookup(rows[i]["symbol"])
         history_dict = {"symbol": quote["symbol"], "shares": rows[i]["shares"],
-                        "price": usd(rows[i]["price"]), "transactions": rows[i]["transactions"]}
+                        "price": usd(rows[i]["price"]), "transactions": rows[i]["transactions"], "total": usd(rows[i]["price"] * rows[i]["number"])}
         history.append(history_dict)
 
     return render_template("history.html", history=history)
@@ -219,6 +220,7 @@ def register():
                 passhash = generate_password_hash(request.form.get("password"))
                 username = request.form.get("username")
                 db.execute("INSERT INTO users (username,hash) VALUES(?, ?)",(username, passhash))
+                conn.commit()
                 db.execute("SELECT * FROM users WHERE username = (?)", (username, ))
                 result = db.fetchall()
                 print(result)
@@ -284,6 +286,7 @@ def sell():
         db.execute("UPDATE users SET cash=? where id=?", (cash_left, id))
         db.execute("INSERT INTO history (symbol, shares, price, transactions) values(?, ?, ?, ?)",
                    (symbol, num, price, dtime))
+        conn.commit()
         return redirect("/")
 
     else:
