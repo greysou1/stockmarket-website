@@ -46,6 +46,7 @@ def index():
     id=session["user_id"]
     db.execute("SELECT * FROM transactions WHERE id=(?)", (id, ))
     rows = db.fetchall()
+    print(rows)
     stocks = []
     id=session["user_id"]
     db.execute("SELECT cash FROM users WHERE id=(?)", (id, ))
@@ -95,8 +96,8 @@ def buy():
             if float(cash[0]["cash"]) >= worth:
                 db.execute("INSERT INTO transactions (id, stocks, symbol, number, price) values(?, ?, ?, ?, ?)", (id, stocks, symbol, shares, price))
                 db.execute("UPDATE users SET cash=(?) WHERE id=(?)", (money_left, id))
-                db.execute("INSERT INTO history (symbol, shares, price, transactions) values(?,?,?,?)",
-                           (symbol, shares, price, dtime))
+                db.execute("INSERT INTO history (id, symbol, shares, price, transactions) values(?,?,?,?,?)",
+                           (id, symbol, shares, price, dtime))
                 conn.commit()
                 return redirect("/")
 
@@ -111,6 +112,7 @@ def history():
     id=session["user_id"]
     db.execute("SELECT * FROM history WHERE id=(?)", (id, ))
     rows = db.fetchall()
+    print(rows)
     history = []
 
     for i, row in enumerate(rows):
@@ -119,6 +121,7 @@ def history():
                         "price": usd(rows[i]["price"]), "transactions": rows[i]["transactions"]}
         history.append(history_dict)
 
+    print(history)
     return render_template("history.html", history=history)
 
 
