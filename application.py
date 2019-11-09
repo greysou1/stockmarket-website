@@ -187,7 +187,7 @@ def quote():
             if not quote:
                 return apology("Invalid symbol", 400)
 
-            return render_template("quoted.html", name=quote["name"], price=usd(quote["price"]), symbol=quote["symbol"])
+            return render_template("quoted.html", name=quote["name"], symbol=quote["symbol"], price=usd(quote["price"]))
     else:
         return render_template("quote.html")
 
