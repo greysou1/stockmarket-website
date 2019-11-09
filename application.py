@@ -112,7 +112,7 @@ def history():
     id=session["user_id"]
     db.execute("SELECT * FROM history WHERE id=(?)", (id, ))
     rows = db.fetchall()
-    print(rows)
+    #print(rows)
     history = []
 
     for i, row in enumerate(rows):
@@ -121,7 +121,7 @@ def history():
                         "price": usd(rows[i]["price"]), "transactions": rows[i]["transactions"]}
         history.append(history_dict)
 
-    print(history)
+    #print(history)
     return render_template("history.html", history=history)
 
 
@@ -280,12 +280,20 @@ def sell():
         db.execute("SELECT number FROM transactions where id=(?) AND symbol=?",
                    (id, symbol))
         shares = db.fetchall()
+        
         shares_left = int(shares[0]["number"]) - int(num)
         price=quote["price"]
-
-        db.execute("UPDATE transactions SET number=? where id=? AND symbol=?",
+        if shares_left == 0:
+            name=quote["name"]
+            user_shares = db.execute("DELETE FROM transactions WHERE id=(?) AND symbol=(?)", (id, symbol))
+        else:
+            db.execute("UPDATE transactions SET number=? where id=? AND symbol=?",
                    (shares_left, id, symbol))
-        cash_left = shares_left * quote["price"]
+        db.execute("SELECT cash FROM users WHERE id = (?)", (id, ))
+        cash = db.fetchall()
+        worth = float(quote["price"]) * float(num)
+        cash_left = float(cash[0]["cash"]) + worth
+        #cash_left = shares_left * quote["price"]
         db.execute("UPDATE users SET cash=? where id=?", (cash_left, id))
         db.execute("INSERT INTO history (symbol, shares, price, transactions) values(?, ?, ?, ?)",
                    (symbol, num, price, dtime))
